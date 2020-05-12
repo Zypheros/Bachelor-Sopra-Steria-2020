@@ -1,0 +1,149 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "domainName": {
+            "type": "string"
+        },
+        "location": {
+            "type": "string",
+            "defaultValue": "northeurope"
+        },
+        "subnetName": {
+            "type": "string",
+            "defaultValue": "aadds-subnet"
+        },
+        "subnetName2": {
+            "type": "string",
+            "defaultValue": "wvd-subnet"
+        },
+        "vnetName": {
+            "type": "string",
+            "defaultValue": "aadds-vnet"
+        },
+        "vnetAddressPrefixes": {
+            "type": "array",
+            "defaultValue": [
+                "10.1.0.0/24",
+                "10.2.0.0/24"
+            ]
+        },
+        "subnetAddressPrefix": {
+            "type": "string",
+            "defaultValue": "10.1.0.0/24"
+        },
+        "subnetAddressPrefix2": {
+            "type": "string",
+            "defaultValue": "10.2.0.0/24"
+        },
+        "nsgName": {
+            "type": "string",
+            "defaultValue": "aadds-nsg"
+        }
+    },
+    "resources": [
+        {
+            "apiVersion": "2017-06-01",
+            "type": "Microsoft.AAD/DomainServices",
+            "name": "[parameters('domainName')]",
+            "location": "[parameters('location')]",
+            "dependsOn": [
+                "[concat('Microsoft.Network/virtualNetworks/', parameters('vnetName'))]"
+            ],
+            "properties": {
+                "domainName": "[parameters('domainName')]",
+                "subnetId": "[concat('/subscriptions/', subscription().subscriptionId, '/resourceGroups/', resourceGroup().name, '/providers/Microsoft.Network/virtualNetworks/', parameters('vnetName'), '/subnets/', parameters('subnetName'))]"
+            }
+        },
+        //Denne NSG-en og tilhørende regler er nødvendige for å tillate all nødvendig trafikk
+        {
+            "type": "Microsoft.Network/NetworkSecurityGroups",
+            "name": "[parameters('nsgName')]",
+            "location": "[parameters('location')]",
+            "properties": {
+                "securityRules": [
+                    {
+                        "name": "AllowSyncWithAzureAD",
+                        "properties": {
+                            "access": "Allow",
+                            "priority": 101,
+                            "direction": "Inbound",
+                            "protocol": "Tcp",
+                            "sourceAddressPrefix": "AzureActiveDirectoryDomainServices",
+                            "sourcePortRange": "*",
+                            "destinationAddressPrefix": "*",
+                            "destinationPortRange": "443"
+                        }
+                    },
+                    {
+                        "name": "AllowPSRemoting",
+                        "properties": {
+                            "access": "Allow",
+                            "priority": 301,
+                            "direction": "Inbound",
+                            "protocol": "Tcp",
+                            "sourceAddressPrefix": "AzureActiveDirectoryDomainServices",
+                            "sourcePortRange": "*",
+                            "destinationAddressPrefix": "*",
+                            "destinationPortRange": "5986"
+                        }
+                    },
+                    {
+                        "name": "AllowRD",
+                        "properties": {
+                            "access": "Allow",
+                            "priority": 201,
+                            "direction": "Inbound",
+                            "protocol": "Tcp",
+                            "sourceAddressPrefix": "CorpNetSaw",
+                            "sourcePortRange": "*",
+                            "destinationAddressPrefix": "*",
+                            "destinationPortRange": "3389"
+                        }
+                    }
+                ]
+            },
+            "apiVersion": "2018-04-01"
+        },
+        //setter opp eget Virtuelt nettverk og subnet for AADDS-en (best practice)
+        {
+            "type": "Microsoft.Network/virtualNetworks",
+            "name": "[parameters('vnetName')]",
+            "location": "[parameters('location')]",
+            "apiVersion": "2018-04-01",
+            "dependsOn": [
+                "[concat('Microsoft.Network/NetworkSecurityGroups/', parameters('nsgName'))]"
+            ],
+            "properties": {
+                "addressSpace": {
+                    "addressPrefixes": "[parameters('vnetAddressPrefixes')]"
+                },
+                "subnets": [
+                    {
+                        "name": "[parameters('subnetName')]",
+                        "properties": {
+                            "addressPrefix": "[parameters('subnetAddressPrefix')]",
+                            //tar i bruk NSG-en som definert tidligere
+                            "networkSecurityGroup": {
+                                "id": "[concat('/subscriptions/', subscription().subscriptionId, '/resourceGroups/', resourceGroup().name, '/providers/Microsoft.Network/NetworkSecurityGroups/', parameters('nsgName'))]"
+                            }
+                        }
+                    },
+                    // Opretter subnet to, for WVD i sammenheng med AADDS
+                    {
+                        "name": "[parameters('subnetName2')]",
+                        "properties": {
+                            "addressPrefix": "[parameters('subnetAddressPrefix2')]",
+                            "networkSecurityGroup": {
+                                "id": "[concat('/subscriptions/', subscription().subscriptionId, '/resourceGroups/', resourceGroup().name, '/providers/Microsoft.Network/NetworkSecurityGroups/', parameters('nsgName'))]"
+                            }
+                            
+                        }
+                    }
+                ]
+            }
+        }
+    ],
+    "outputs": {
+    }
+}

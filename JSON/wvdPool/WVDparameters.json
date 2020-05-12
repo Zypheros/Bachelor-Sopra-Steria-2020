@@ -1,0 +1,102 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentParameters.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "rdshImageSource": {
+            "value": "Gallery"
+        },
+        "vmImageVhdUri": {
+            "value": ""
+        },
+        "rdshGalleryImageSKU": {
+            "value": "Windows-10-Enterprise-multi-session-with-Office-365-ProPlus"
+        },
+        "rdshCustomImageSourceName": {
+            "value": ""
+        },
+        "rdshCustomImageSourceResourceGroup": {
+            "value": ""
+        },
+        "rdshNamePrefix": {
+            "value": "rdsh-01"
+        },
+        "rdshNumberOfInstances": {
+            "value": 1
+        },
+        "rdshVMDiskType": {
+            "value": "StandardSSD_LRS"
+        },
+        "rdshVmSize": {
+            "value": "Standard_D4s_v3"
+        },
+        "enableAcceleratedNetworking": {
+            "value": false
+        },
+        "rdshUseManagedDisks": {
+            "value": true
+        },
+        "storageAccountResourceGroupName": {
+            "value": "''"
+        },
+        "domainToJoin": {
+            "value": "migorgtest.onmicrosoft.com"
+        },
+        "existingDomainUPN": {
+            "value": "adadmin@migorgtest.onmicrosoft.com"
+        },
+        "existingDomainPassword": {
+            "value": null
+        },
+        "ouPath": {
+            "value": ""
+        },
+        "existingVnetName": {
+            "value": "vnetWorkstations"
+        },
+        "newOrExistingVnet": {
+            "value": "existing"
+        },
+        "existingSubnetName": {
+            "value": "Subnet"
+        },
+        "virtualNetworkResourceGroupName": {
+            "value": "testGroup"
+        },
+        "rdBrokerURL": {
+            "value": "https://rdbroker.wvd.microsoft.com"
+        },
+        "existingTenantGroupName": {
+            "value": "Default Tenant Group"
+        },
+        "existingTenantName": {
+            "value": "azureMigrateTestOrg"
+        },
+        "hostPoolName": {
+            "value": "migOrgTest"
+        },
+        "serviceMetadataLocation": {
+            "value": "United-States"
+        },
+        "enablePersistentDesktop": {
+            "value": false
+        },
+        "defaultDesktopUsers": {
+            "value": ""
+        },
+        "tenantAdminUpnOrApplicationId": {
+            "value": "adadmin@migorgtest.onmicrosoft.com"
+        },
+        "tenantAdminPassword": {
+            "value": null
+        },
+        "isServicePrincipal": {
+            "value": false
+        },
+        "aadTenantId": {
+            "value": ""
+        },
+        "location": {
+            "value": "northeurope"
+        }
+    }
+}

@@ -1,0 +1,30 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentParameters.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "domainName": {
+            "value": "salmoDomainTest28.com"
+        },
+        "location": {
+            "value": "northeurope"
+        },
+        "subnetName": {
+            "value": "aadds-subnet"
+        },
+        "vnetName": {
+            "value": "aadds-vnet"
+        },
+        "vnetAddressPrefixes": {
+            "value": [
+                "10.1.0.0/24",
+                "10.2.0.0/24"
+            ]
+        },
+        "subnetAddressPrefix": {
+            "value": "10.1.0.0/24"
+        },
+        "nsgName": {
+            "value": "aadds-nsg"
+        }
+    }
+}

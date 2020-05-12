@@ -1,0 +1,59 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentParameters.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "vmImageVhdUri": {
+            "value": ""
+        },
+        "storageAccountResourceGroupName": {
+            "value": "''"
+        },
+        "rdshGalleryImageSKU": {
+            "value": "Windows-10-Enterprise-multi-session-with-Office-365-ProPlus-1909"
+        },
+        "rdshPrefix": {
+            "value": "testHosts-"
+        },
+        "rdshNumberOfInstances": {
+            "value": 1
+        },
+        "rdshVMDiskType": {
+            "value": "Standard_LRS"
+        },
+        "rdshVmSize": {
+            "value": "Standard_D4s_v3"
+        },
+        "enableAcceleratedNetworking": {
+            "value": false
+        },
+        "existingDomainusername": {
+            "value": "domainjoiner"
+        },
+        "existingDomainPassword": {
+            "reference": {
+                "keyVault": {
+                    "id": "subscription-id-goes-here"
+                },
+                "secretName": "password-goes-here"
+            }
+        },
+        "vhds": {
+            "value": "vhds/testHosts-"
+        },
+        "subnet-id": {
+            "value": "uniqe-id-goes-here"
+        },
+        "rdshImageSourceResourceGroup": {
+            "value": ""
+        },
+        "rdshImageSourceName": {
+            "value": ""
+        },
+        "location": {
+            "value": "northeurope"
+        },
+        "createAvailabilitySet": {
+            "value": false
+        }
+    }
+}

@@ -1,0 +1,263 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "VmImageVhdUri": {
+            "type": "String",
+            "metadata": {
+                "description": "URI of the sysprepped image vhd file to be used to create the session host VMs. For example, https://rdsstorage.blob.core.windows.net/vhds/sessionhostimage.vhd"
+            }
+        },
+        "storageAccountResourceGroupName": {
+            "type": "String",
+            "metadata": {
+                "description": "The storage account containing the custom VHD."
+            }
+        },
+        "rdshGalleryImageSKU": {
+            "allowedValues": [
+                "Windows-10-Enterprise-multi-session-with-Office-365-ProPlus",
+                "Windows-10-Enterprise-multi-session-with-Office-365-ProPlus-1909",
+                "Windows-10-Enterprise-multi-session-with-Office-365-ProPlus-1903",
+                "Windows-10-Enterprise-multi-session",
+                "Windows-10-Enterprise-multi-session-1909",
+                "Windows-10-Enterprise-multi-session-1903",
+                "Windows-10-Enterprise-Latest",
+                "Windows-10-Enterprise-1909",
+                "Windows-10-Enterprise-1903",
+                "2016-Datacenter"
+            ],
+            "type": "String",
+            "metadata": {
+                "description": "Gallery image SKU."
+            }
+        },
+        "rdshPrefix": {
+            "defaultValue": "[take(toLower(resourceGroup().name),10)]",
+            "type": "String",
+            "metadata": {
+                "description": "This prefix will be used in combination with the VM number to create the VM name. This value includes the dash, so if using “rdsh” as the prefix, VMs would be named “rdsh-0”, “rdsh-1”, etc. You should use a unique prefix to reduce name collisions in Active Directory."
+            }
+        },
+        "rdshNumberOfInstances": {
+            "type": "Int",
+            "metadata": {
+                "description": "Number of session hosts that will be created and added to the hostpool."
+            }
+        },
+        "rdshVMDiskType": {
+            "defaultValue": "Premium_LRS",
+            "allowedValues": [
+                "Premium_LRS",
+                "StandardSSD_LRS",
+                "Standard_LRS"
+            ],
+            "type": "String",
+            "metadata": {
+                "description": "The VM disk type for the VM: Premium_LRS (Default), Standard_LRS or StandardSSD_LRS."
+            }
+        },
+        "rdshVmSize": {
+            "defaultValue": "Standard_A2",
+            "type": "String",
+            "metadata": {
+                "description": "The size of the session host VMs."
+            }
+        },
+        "enableAcceleratedNetworking": {
+            "defaultValue": false,
+            "type": "Bool",
+            "metadata": {
+                "description": "Enables Accelerated Networking feature, notice that VM size must support it, this is supported in most of general purpose and compute-optimized instances with 2 or more vCPUs, on instances that supports hyperthreading it is required minimum of 4 vCPUs."
+            }
+        },
+        "existingDomainusername": {
+            "type": "String",
+            "metadata": {
+                "description": "The username for the admin."
+            }
+        },
+        "existingDomainPassword": {
+            "type": "SecureString",
+            "metadata": {
+                "description": "The password that corresponds to the existing domain username."
+            }
+        },
+        "vhds": {
+            "type": "String",
+            "metadata": {
+                "description": "The URL to store unmanaged disks."
+            }
+        },
+        "subnet-id": {
+            "type": "String",
+            "metadata": {
+                "description": "The unique id of the subnet for the nics."
+            }
+        },
+        "rdshImageSourceResourceGroup": {
+            "defaultValue": "",
+            "type": "String",
+            "metadata": {
+                "description": "Resource group name for the managed disk, if you choose to provide one."
+            }
+        },
+        "rdshImageSourceName": {
+            "defaultValue": "",
+            "type": "String",
+            "metadata": {
+                "description": "Name of the managed disk."
+            }
+        },
+        "location": {
+            "defaultValue": "",
+            "type": "String",
+            "metadata": {
+                "description": "Location for all resources to be created in."
+            }
+        },
+        "createAvailabilitySet": {
+            "defaultValue": true,
+            "type": "Bool",
+            "metadata": {
+                "description": "Set this parameter to true if an Availability set was created. Defaults to true. Using an Availability set limits you to a maximum of 200 virtual machines For more info: https://docs.microsoft.com/en-us/azure/azure-resource-manager/management/azure-subscription-service-limits#virtual-machines-limits---azure-resource-manager."
+            }
+        }
+    },
+    "variables": {
+        "galleryImage": {
+            "Windows-10-Enterprise-multi-session-with-Office-365-ProPlus": {
+                "galleryPublisher": "MicrosoftWindowsDesktop",
+                "galleryOffer": "office-365",
+                "gallerySku": "19h2-evd-o365pp"
+            },
+            "Windows-10-Enterprise-multi-session-with-Office-365-ProPlus-1909": {
+                "galleryPublisher": "MicrosoftWindowsDesktop",
+                "galleryOffer": "office-365",
+                "gallerySku": "19h2-evd-o365pp"
+            },
+            "Windows-10-Enterprise-multi-session-with-Office-365-ProPlus-1903": {
+                "galleryPublisher": "MicrosoftWindowsDesktop",
+                "galleryOffer": "office-365",
+                "gallerySku": "1903-evd-o365pp"
+            },
+            "Windows-10-Enterprise-multi-session": {
+                "galleryPublisher": "MicrosoftWindowsDesktop",
+                "galleryOffer": "Windows-10",
+                "gallerySku": "19h2-evd"
+            },
+            "Windows-10-Enterprise-multi-session-1909": {
+                "galleryPublisher": "MicrosoftWindowsDesktop",
+                "galleryOffer": "Windows-10",
+                "gallerySku": "19h2-evd"
+            },
+            "Windows-10-Enterprise-multi-session-1903": {
+                "galleryPublisher": "MicrosoftWindowsDesktop",
+                "galleryOffer": "Windows-10",
+                "gallerySku": "19h1-evd"
+            },
+            "Windows-10-Enterprise-Latest": {
+                "galleryPublisher": "MicrosoftWindowsDesktop",
+                "galleryOffer": "Windows-10",
+                "gallerySku": "19h2-ent"
+            },
+            "Windows-10-Enterprise-1909": {
+                "galleryPublisher": "MicrosoftWindowsDesktop",
+                "galleryOffer": "Windows-10",
+                "gallerySku": "19h2-ent"
+            },
+            "Windows-10-Enterprise-1903": {
+                "galleryPublisher": "MicrosoftWindowsDesktop",
+                "galleryOffer": "Windows-10",
+                "gallerySku": "19h1-ent"
+            },
+            "2016-Datacenter": {
+                "galleryPublisher": "MicrosoftwindowsServer",
+                "galleryOffer": "WindowsServer",
+                "gallerySku": "2016-Datacenter"
+            }
+        },
+        "storageAccountType": "[parameters('rdshVMDiskType')]",
+        "availabilitySetId": {
+            "id": "[if(parameters('createAvailabilitySet'), resourceId('Microsoft.Compute/availabilitySets/', concat(parameters('rdshPrefix'), 'availabilitySet')), json('null'))]"
+        }
+    },
+    "resources": [
+        {
+            "type": "Microsoft.Network/networkInterfaces",
+            "apiVersion": "2018-11-01",
+            "name": "[concat(parameters('rdshPrefix'), copyindex(), '-nic')]",
+            "location": "[parameters('location')]",
+            "properties": {
+                "ipConfigurations": [
+                    {
+                        "name": "ipconfig",
+                        "properties": {
+                            "privateIPAllocationMethod": "Dynamic",
+                            "subnet": {
+                                "id": "[parameters('subnet-id')]"
+                            }
+                        }
+                    }
+                ],
+                "enableAcceleratedNetworking": "[parameters('enableAcceleratedNetworking')]"
+            },
+            "copy": {
+                "name": "rdsh-nic-loop",
+                "count": "[parameters('rdshNumberOfInstances')]"
+            }
+        },
+        {
+            "type": "Microsoft.Compute/virtualMachines",
+            "apiVersion": "2018-10-01",
+            "name": "[concat(parameters('rdshPrefix'), copyindex())]",
+            "location": "[parameters('location')]",
+            "dependsOn": [
+                "[concat('Microsoft.Network/networkInterfaces/', parameters('rdshPrefix'), copyindex(), '-nic')]"
+            ],
+            "properties": {
+                "hardwareProfile": {
+                    "vmSize": "[parameters('rdshVmSize')]"
+                },
+                "availabilitySet": "[if(parameters('createAvailabilitySet'), variables('availabilitySetId'), json('null'))]",
+                "osProfile": {
+                    "computerName": "[concat(parameters('rdshPrefix'), copyindex())]",
+                    "adminUsername": "[parameters('existingDomainUsername')]",
+                    "adminPassword": "[parameters('existingDomainPassword')]"
+                },
+                "storageProfile": {
+                    "imageReference": {
+                        "publisher": "[variables('galleryimage')[parameters('rdshGalleryImageSKU')].galleryPublisher]",
+                        "offer": "[variables('galleryImage')[parameters('rdshGalleryImageSKU')].galleryOffer]",
+                        "sku": "[variables('galleryImage')[parameters('rdshGalleryImageSKU')].gallerySku]",
+                        "version": "latest"
+                    },
+                    "osDisk": {
+                        "createOption": "FromImage",
+                        "managedDisk": {
+                            "storageAccountType": "[variables('storageAccountType')]"
+                        }
+                    }
+                },
+                "networkProfile": {
+                    "networkInterfaces": [
+                        {
+                            "id": "[resourceId('Microsoft.Network/networkInterfaces',concat(parameters('rdshPrefix'), copyindex(), '-nic'))]"
+                        }
+                    ]
+                },
+                "diagnosticsProfile": {
+                    "bootDiagnostics": {
+                        "enabled": false
+                    }
+                },
+                "licenseType": "Windows_Client"
+            },
+            "copy": {
+                "name": "rdsh-vm-loop",
+                "count": "[parameters('rdshNumberOfInstances')]"
+            }
+        }
+    ],
+    "outputs": {}
+}

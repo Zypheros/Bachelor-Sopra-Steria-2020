@@ -1,0 +1,115 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentParameters.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "rdshImageSource": {
+            "value": "Gallery"
+        },
+        "vmImageVhdUri": {
+            "value": ""
+        },
+        "rdshGalleryImageSKU": {
+            "value": "Windows-10-Enterprise-multi-session-with-Office-365-ProPlus-1909"
+        },
+        "rdshCustomImageSourceName": {
+            "value": ""
+        },
+        "rdshCustomImageSourceResourceGroup": {
+            "value": ""
+        },
+        "rdshNamePrefix": {
+            "value": "testHosts"
+        },
+        "rdshNumberOfInstances": {
+            "value": 1
+        },
+        "rdshVMDiskType": {
+            "value": "Standard_LRS"
+        },
+        "rdshVmSize": {
+            "value": "Standard_D4s_v3"
+        },
+        "enableAcceleratedNetworking": {
+            "value": false
+        },
+        "rdshUseManagedDisks": {
+            "value": true
+        },
+        "storageAccountResourceGroupName": {
+            "value": "''"
+        },
+        "domainToJoin": {
+            "value": "salmoDomainTest.com"
+        },
+        "existingDomainUPN": {
+            "value": "domainjoiner@bachelorntnu20.onmicrosoft.com"
+        },
+        "existingDomainPassword": {
+            "reference": {
+                "keyVault": {
+                    "id": "subscription-id-goes-here"
+                },
+                "secretName": "password-goes-here"
+            }
+        },
+        "ouPath": {
+            "value": ""
+        },
+        "existingVnetName": {
+            "value": "aadds-vnet"
+        },
+        "newOrExistingVnet": {
+            "value": "existing"
+        },
+        "existingSubnetName": {
+            "value": "wvdNet"
+        },
+        "virtualNetworkResourceGroupName": {
+            "value": "test1604"
+        },
+        "rdBrokerURL": {
+            "value": "https://rdbroker.wvd.microsoft.com"
+        },
+        "existingTenantGroupName": {
+            "value": "Default Tenant Group"
+        },
+        "existingTenantName": {
+            "value": "TestTenantNTNU"
+        },
+        "hostPoolName": {
+            "value": "testPool2"
+        },
+        "serviceMetadataLocation": {
+            "value": "United-States"
+        },
+        "enablePersistentDesktop": {
+            "value": false
+        },
+        "defaultDesktopUsers": {
+            "value": ""
+        },
+        "tenantAdminUpnOrApplicationId": {
+            "value": "uniqe-id-goes-here"
+        },
+        "tenantAdminPassword": {
+            "reference": {
+                "keyVault": {
+                    "id": "subscription-id-goes-here"
+                },
+                "secretName": "password-goes-here"
+            }
+        },
+        "isServicePrincipal": {
+            "value": true
+        },
+        "aadTenantId": {
+            "value": "111e3365-a5c0-406b-a58b-a447c4ff80b9"
+        },
+        "location": {
+            "value": "northeurope"
+        },
+        "createAvailabilitySet": {
+            "value": false
+        }
+    }
+}

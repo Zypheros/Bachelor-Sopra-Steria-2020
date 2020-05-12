@@ -1,0 +1,27 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentParameters.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "vmName": {
+            "value": "vmtest2"
+        },
+        "adminUsername": {
+            "value": "emil"
+        },
+        "administratorLoginPassword": {
+            "reference": {
+                "keyVault": {
+                    "id": "subscription-id-goes-here"
+                },
+                "secretName": "password-goes-here"
+            }
+        },
+        "vmSize": {
+            "value": "Standard_B2ms"
+        },
+
+        "location": {
+            "value": "northeurope"
+        }
+    }
+}

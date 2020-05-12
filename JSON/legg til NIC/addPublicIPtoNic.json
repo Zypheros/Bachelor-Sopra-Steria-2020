@@ -1,0 +1,86 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "networkInterfaceName": {
+            "type": "string"
+        },
+        //"virtualNetworkExternalID": {
+          //  "type": "string"
+       // },
+        "location": {
+            "type": "string",
+            "defaultValue": "northeurope"
+        },
+        "vmName": {
+            "type": "string"
+        },
+        "virtualNetworkID": {
+            "type": "string",
+            "defaultValue": "/subscriptions/570e3c0c-7133-44d6-928e-41f3e40ccbb0/resourceGroups/test2804/providers/Microsoft.Network/virtualNetworks/migrationNetwork"
+        }
+    },
+    "variables": {
+        "publicIPAddressName": "[concat('publicIP', parameters('networkInterfaceName'))]",
+        "publicIPAddressID": "[resourceId('Microsoft.Network/publicIPAddresses', variables('publicIPAddressName'))]"
+        },
+    "resources": [
+        {
+            "type": "Microsoft.Network/publicIPAddresses",
+            "apiVersion": "2019-04-01",
+            "name": "[variables('publicIPAddressName')]",
+            "location": "[parameters('location')]",
+            "properties": {
+                "publicIPAllocationMethod": "Static"
+            }
+        },
+        //fester public-ip adressen til netverkskortet som vi har valgt
+        {
+            "type": "Microsoft.Network/networkInterfaces",
+            "apiVersion": "2019-11-01",
+            "name": "[parameters('networkInterfaceName')]",
+            "location": "northeurope",
+            "properties": {
+                "ipConfigurations": [
+                    {
+                        "name": "[concat('ipConfig', parameters('networkInterfaceName'))]",
+                        "properties": {
+                            "privateIPAddress": "10.1.0.5",
+                            "privateIPAllocationMethod": "Dynamic",
+                            "publicIPAddress": {
+                                "id": "[variables('publicIPAddressID')]"
+                            },
+                            "subnet": {
+                                "id": "[concat(parameters('virtualNetworkID'), '/subnets/migrationSubn')]"
+                            },
+                            "primary": true,
+                            "privateIPAddressVersion": "IPv4"
+
+                        }
+                    }
+                ]
+            },
+            "dependsOn": [
+                "[resourceId('Microsoft.Network/publicIPAddresses', variables('publicIPAddressName'))]"
+            ]
+        },
+        {
+            "name": "[parameters('vmName')]",
+            "type": "Microsoft.Compute/virtualMachines",
+            "apiVersion": "2019-07-01",
+            "dependsOn": [
+                "[resourceId('Microsoft.Network/networkInterfaces', parameters('networkInterfaceName'))]"
+            ],
+            "location": "[parameters('location')]",
+            "properties": {
+                "networkProfile": {
+                    "networkInterfaces": [
+                        {
+                            "id": "[resourceId('Microsoft.Network/networkInterfaces', parameters('networkInterfaceName'))]"
+                        }
+                    ]
+                }
+            }
+        }
+    ]
+}

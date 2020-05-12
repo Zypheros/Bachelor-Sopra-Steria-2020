@@ -1,0 +1,259 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "resourceTags": {
+            "type": "object",
+            "defaultValue": {
+                "Environment": "azureMigration",
+                "Project": "Replication Appliance"
+            }
+        },
+        "adminUsername": {
+            "type": "string"
+        },
+        "VMname": {
+            "type": "string"
+        },
+        "adminPassword": {
+            "type": "string"
+        },
+        "location": {
+            "type": "string",
+            "defaultValue": "[resourceGroup().location]"
+        },
+        "VMsize": {
+            "type": "string",
+            "defaultValue": "Standard_B2ms",
+            "allowedValues": [
+                "Standard_B2ms",
+                "Standard_A8v2"
+            ]
+        },
+        "windowsOSVersion": {
+            "type": "string",
+            "defaultValue": "2016-Datacenter",
+            "allowedValues": [
+                "2008-R2-SP1",
+                "2012-Datacenter",
+                "2012-R2-Datacenter",
+                "2016-Nano-Server",
+                "2016-Datacenter-with-Containers",
+                "2016-Datacenter",
+                "2019-Datacenter"
+            ]
+        },
+        "virtualNetworkName": {
+            "type": "string",
+            "defaultValue": "DefaultVNET"
+        },
+        "networkSecurityGroupName": {
+            "type": "string",
+            "defaultValue": "ReplApp-NSG"
+        }
+    },
+    "variables": {
+        "VMname": "[parameters('VMname')]",
+        "nicName": "[concat(parameters('VMname'), 'NIC')]",
+        "addressPrefix": "10.0.0.0/16",
+        "subnetName": "Subnet",
+        "subnetPrefix": "10.0.0.0/24",
+        "publicIPAddressName": "[uniqueString(resourceGroup().id, deployment().name)]",
+        "subnetRef": "[resourceId('Microsoft.Network/virtualNetworks/subnets', variables('virtualNetworkName'), variables('subnetName'))]",
+        "virtualNetworkName": "[parameters('virtualNetworkName')]"
+    },
+    "resources": [
+        {
+            "type": "Microsoft.Network/publicIPAddresses",
+            "tags": "[parameters('resourceTags')]",
+            "apiVersion": "2019-04-01",
+            "name": "[variables('publicIPAddressName')]",
+            "location": "[parameters('location')]",
+            "properties": {
+                "publicIPAllocationMethod": "Static"
+            }
+        },
+        {
+            "type": "Microsoft.Network/virtualNetworks",
+            "tags": "[parameters('resourceTags')]",
+            "apiVersion": "2018-11-01",
+            "location": "[parameters('location')]",
+            "name": "[variables('virtualNetworkName')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Network/networkSecurityGroups', parameters('networkSecurityGroupName'))]"
+            ],
+            "properties": {
+                "addressSpace": {
+                    "addressPrefixes": [
+                        "[variables('addressPrefix')]"
+                    ]
+                },
+                "subnets": [
+                    {
+                        "name": "[variables('subnetName')]",
+                        "properties": {
+                            "addressPrefix": "[variables('subnetPrefix')]",
+                            "networkSecurityGroup": {
+                                "id": "[resourceId('Microsoft.Network/networkSecurityGroups', parameters('networkSecurityGroupName'))]"
+                            }
+                        }
+                    }
+                ]
+            }
+        },
+        {
+            "comments": "Default Network Security Group for template",
+            "tags": "[parameters('resourceTags')]",
+            "type": "Microsoft.Network/networkSecurityGroups",
+            "apiVersion": "2019-08-01",
+            "name": "[parameters('networkSecurityGroupName')]",
+            "location": "[parameters('location')]",
+            "properties": {
+                "securityRules": [
+                    {
+                        "name": "default-allow-3389",
+                        "properties": {
+                            "priority": 1000,
+                            "access": "Allow",
+                            "direction": "Inbound",
+                            "destinationPortRange": "3389",
+                            "protocol": "Tcp",
+                            "sourcePortRange": "*",
+                            "sourceAddressPrefix": "*",
+                            "destinationAddressPrefix": "*"
+                        }
+                    },
+                    {
+                        "name": "allow-innbound-44368",
+                        "properties": {
+                            "priority": 1001,
+                            "access": "Allow",
+                            "direction": "Inbound",
+                            "destinationPortRange": "44368",
+                            "protocol": "*",
+                            "sourcePortRange": "*",
+                            "sourceAddressPrefix": "*",
+                            "destinationAddressPrefix": "*"
+                        }
+                    },
+                    {
+                        "name": "allow-outbound",
+                        "properties": {
+                            "priority": 1002,
+                            "access": "Allow",
+                            "direction": "Outbound",
+                            "destinationPortRanges": [
+                                "443",
+                                "5671",
+                                "5672"
+                            ],
+                            "protocol": "*",
+                            "sourcePortRange": "*",
+                            "sourceAddressPrefix": "*",
+                            "destinationAddressPrefix": "*"
+                        }
+                    }
+                ]
+            }
+        },
+        {
+            "type": "Microsoft.Network/networkInterfaces",
+            "tags": "[parameters('resourceTags')]",
+            "apiVersion": "2018-11-01",
+            "name": "[variables('nicName')]",
+            "location": "[parameters('location')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Network/publicIPAddresses/', variables('publicIPAddressName'))]",
+                "[resourceId('Microsoft.Network/virtualNetworks/', variables('virtualNetworkName'))]"
+            ],
+            "properties": {
+                "ipConfigurations": [
+                    {
+                        "name": "ipconfig1",
+                        "properties": {
+                            "privateIPAllocationMethod": "Dynamic",
+                            "publicIPAddress": {
+                                "id": "[resourceId('Microsoft.Network/publicIPAddresses',variables('publicIPAddressName'))]"
+                            },
+                            "subnet": {
+                                "id": "[variables('subnetRef')]"
+                            }
+                        }
+                    }
+                ]
+            }
+        },
+        {
+            "name": "[variables('VMname')]",
+            "type": "Microsoft.Compute/virtualMachines",
+            "tags": "[parameters('resourceTags')]",
+            "apiVersion": "2019-07-01",
+            "dependsOn": [
+                "[resourceId('Microsoft.Network/networkInterfaces', variables('nicName'))]"
+            ],
+            "location": "[resourceGroup().location]",
+            "properties": {
+                "hardwareProfile": {
+                    "vmSize": "[parameters('VMsize')]"
+                },
+                "osProfile": {
+                    "computerName": "[variables('VMname')]",
+                    "adminUsername": "[parameters('adminUsername')]",
+                    "adminPassword": "[parameters('adminPassword')]"
+                },
+                "storageProfile": {
+                    "imageReference": {
+                        "publisher": "MicrosoftWindowsServer",
+                        "offer": "WindowsServer",
+                        "sku": "[parameters('windowsOSVersion')]",
+                        "version": "latest"
+                    },
+                    "osDisk": {
+                        "createOption": "FromImage",
+                        "diskSizeGB": 600   
+                    },
+                    "dataDisks": [
+                        {
+                            "diskSizeGB": 600,
+                            "lun": 0,
+                            "createOption": "Empty"
+                        }
+                    ]
+                },
+                "networkProfile": {
+                    "networkInterfaces": [
+                        {
+                            "id": "[resourceId('Microsoft.Network/networkInterfaces', variables('nicName'))]"
+                        }
+                    ]
+                }
+            },
+            "resources": [
+                {
+                    "apiVersion": "2019-07-01",
+                    "type": "extensions",
+                    "name": "CustomScriptExtension",
+                    "location": "[parameters('location')]",
+                    "dependsOn": [
+                        "[variables('vmName')]"
+                    ],
+                    "properties": {
+                        "protectedSettings": {
+
+                        },
+                        "publisher": "Microsoft.Compute",
+                        "type": "CustomScriptExtension",
+                        "typeHandlerVersion": "1.8",
+                        "autoUpgradeMinorVersion": true,
+                        "settings": {
+                            "fileUris": [
+                                "https://raw.githubusercontent.com/emilbra/ARMTest/master/dwnmsql.ps1"
+                            ],
+                            "commandToExecute": "powershell.exe -ExecutionPolicy Unrestricted -File dwnmsql.ps1"
+                        }
+                    }
+                }
+            ]
+        }
+    ]
+}
