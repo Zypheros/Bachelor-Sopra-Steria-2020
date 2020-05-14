@@ -1,11 +1,11 @@
 
-# Skript som benyttes til å lage et image av en VM
-# Her benyttes AZ-modulen
+# SCript for making an VM-image
+# Requires the AZ-module-
 
-$vmName = "MLTjener"
-$rgName = "testmigration"
-$location = "northeurope"
-$imageName = "testImage"
+$vmName = "VMNAME"
+$rgName = "Resource Group"
+$location = "location"
+$imageName = "name of resulting image"
 
 Stop-AzVM -ResourceGroupName $rgName -Name $vmName -Force
 Set-AzVM -ResourceGroupName $rgName -Name $vmName -Generalized

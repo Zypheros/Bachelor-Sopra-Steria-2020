@@ -4,6 +4,9 @@
     "parameters": {
         "storageAccName": {
             "value": "storageAccountName-goes-here"
+        },
+        "fileShareName": {
+            "value": "fileShareName-Here"
         }
     }
 }
